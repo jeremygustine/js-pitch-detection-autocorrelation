@@ -1,225 +1,32 @@
-function autoCorrelate (buf, sampleRate) {
-  //https://github.com/cwilso/PitchDetect/blob/master/js/pitchdetect.js
+function autocorrelate2 (values, sampleRate) {
+  realFreq = sampleRate
+  samples = values.length
+  sum = 0
+  pd_state = 0
+  period = 0
+  // Autocorrelation
+  for (i = 0; i < samples; i++) {
+    sum_old = sum
+    sum = 0
 
-  //https://github.com/cwilso/PitchDetect/pull/23
-  // Implements the ACF2+ algorithm
-  var SIZE = buf.length
-  var rms = 0
+    for (k = 0; k < samples - i; k++) sum += values[k] * values[k + i]
 
-  for (var i = 0; i < SIZE; i++) {
-    var val = buf[i]
-    rms += val * val
-  }
-  rms = Math.sqrt(rms / SIZE)
-  if (rms < 0.01)
-    // not enough signal
-    return -1
-
-  var r1 = 0,
-    r2 = SIZE - 1,
-    thres = 0.2
-  for (var i = 0; i < SIZE / 2; i++)
-    if (Math.abs(buf[i]) < thres) {
-      r1 = i
-      break
+    // Peak Detect State Machine
+    if (pd_state == 2 && sum - sum_old <= 0) {
+      period = i
+      pd_state = 3
     }
-  for (var i = 1; i < SIZE / 2; i++)
-    if (Math.abs(buf[SIZE - i]) < thres) {
-      r2 = SIZE - i
-      break
-    }
-
-  buf = buf.slice(r1, r2)
-  SIZE = buf.length
-
-  var c = new Array(SIZE).fill(0)
-  for (var i = 0; i < SIZE; i++)
-    for (var j = 0; j < SIZE - i; j++) c[i] = c[i] + buf[j] * buf[j + i]
-
-  var d = 0
-  while (c[d] > c[d + 1]) d++
-  var maxval = -1,
-    maxpos = -1
-  for (var i = d; i < SIZE; i++) {
-    if (c[i] > maxval) {
-      maxval = c[i]
-      maxpos = i
+    if (pd_state == 1 && sum > thresh && sum - sum_old > 0) pd_state = 2
+    if (!i) {
+      thresh = sum * 0.5
+      pd_state = 1
     }
   }
-  var T0 = maxpos
-
-  var x1 = c[T0 - 1],
-    x2 = c[T0],
-    x3 = c[T0 + 1]
-  a = (x1 + x3 - 2 * x2) / 2
-  b = (x3 - x1) / 2
-  if (a) T0 = T0 - b / (2 * a)
-
-  return sampleRate / T0
+  // Frequency identified in Hz
+  freq_per = realFreq / period
+  console.log(freq_per)
 }
 
-function doSomeCoolShit (analyserNode, audioContext) {
-  let buffer = new Float32Array(4096)
-  let halfBufferLength = Math.floor(buffer.length * 0.5)
-  let difference = 0
-  let smallestDifference = Number.POSITIVE_INFINITY
-  let smallestDifferenceOffset = 0
-
-  // Fill up the wave data.
-  analyserNode.getFloatTimeDomainData(buffer)
-
-  // Start an offset of 1. No point in comparing the wave
-  // to itself at offset 0.
-  for (let o = 1; o < halfBufferLength; o++) {
-    difference = 0
-
-    for (let i = 0; i < halfBufferLength; i++) {
-      // For this iteration, work out what the
-      // difference is between the wave and the
-      // offset version.
-      difference += Math.abs(buffer[i] - buffer[i + o])
-    }
-
-    // Average it out.
-    difference /= halfBufferLength
-
-    // If this is the smallest difference so far hold it.
-    if (difference < smallestDifference) {
-      smallestDifference = difference
-      smallestDifferenceOffset = o
-    }
-  }
-
-  // Now we know which offset yielded the smallest
-  // difference we can convert it to a frequency.
-  return audioContext.sampleRate / smallestDifferenceOffset
-}
-
-function autocorrelateAudioData (time) {
-  let searchSize = this.frequencyBufferLength * 0.5
-  let sampleRate = this.audioContext.sampleRate
-  let offsetKey = null
-  let offset = 0
-  let difference = 0
-  let tolerance = 0.001
-  let rms = 0
-  let rmsMin = 0.008
-  let assessedStringsInLastFrame = this.assessedStringsInLastFrame
-
-  // Fill up the data.
-  this.analyser.getFloatTimeDomainData(this.frequencyBuffer)
-
-  // Figure out the root-mean-square, or rms, of the audio. Basically
-  // this seems to be the amount of signal in the buffer.
-  for (let d = 0; d < this.frequencyBuffer.length; d++) {
-    rms += this.frequencyBuffer[d] * this.frequencyBuffer[d]
-  }
-
-  rms = Math.sqrt(rms / this.frequencyBuffer.length)
-
-  // If there's little signal in the buffer quit out.
-  if (rms < rmsMin) return 0
-
-  // Only check for a new string if the volume goes up. Otherwise assume
-  // that the string is the same as the last frame.
-  if (rms > this.lastRms + this.rmsThreshold)
-    this.assessStringsUntilTime = time + 250
-
-  if (time < this.assessStringsUntilTime) {
-    let smallestDifference = Number.POSITIVE_INFINITY
-    let smallestDifferenceKey = ''
-
-    this.assessedStringsInLastFrame = true
-
-    // Go through each string and figure out which is the most
-    // likely candidate for the string being tuned based on the
-    // difference to the "perfect" tuning.
-    for (let o = 0; o < this.stringsKeys.length; o++) {
-      offsetKey = this.stringsKeys[o]
-      offset = this.strings[offsetKey].offset
-      difference = 0
-
-      // Reset how often this string came out as the closest.
-      if (assessedStringsInLastFrame === false)
-        this.strings[offsetKey].difference = 0
-
-      // Now we know where the peak is, we can start
-      // assessing this sample based on that. We will
-      // step through for this string comparing it to a
-      // "perfect wave" for this string.
-      for (let i = 0; i < searchSize; i++) {
-        difference += Math.abs(
-          this.frequencyBuffer[i] - this.frequencyBuffer[i + offset]
-        )
-      }
-
-      difference /= searchSize
-
-      // Weight the difference by frequency. So lower strings get
-      // less preferential treatment (higher offset values). This
-      // is because harmonics can mess things up nicely, so we
-      // course correct a little bit here.
-      this.strings[offsetKey].difference += difference * offset
-    }
-  } else {
-    this.assessedStringsInLastFrame = false
-  }
-
-  // If this is the first frame where we've not had to reassess strings
-  // then we will order by the string with the largest number of matches.
-  if (
-    assessedStringsInLastFrame === true &&
-    this.assessedStringsInLastFrame === false
-  ) {
-    this.stringsKeys.sort(this.sortStringKeysByDifference)
-  }
-
-  // Next for the top candidate in the set, figure out what
-  // the actual offset is from the intended target.
-  // We'll do it by making a full sweep from offset - 10 -> offset + 10
-  // and seeing exactly how long it takes for this wave to repeat itself.
-  // And that will be our *actual* frequency.
-  let searchRange = 10
-  let assumedString = this.strings[this.stringsKeys[0]]
-  let searchStart = assumedString.offset - searchRange
-  let searchEnd = assumedString.offset + searchRange
-  let actualFrequency = assumedString.offset
-  let smallestDifference = Number.POSITIVE_INFINITY
-
-  for (let s = searchStart; s < searchEnd; s++) {
-    difference = 0
-
-    // For each iteration calculate the difference of every element of the
-    // array. The data in the buffer should be PCM, so values ranging
-    // from -1 to 1. If they match perfectly then they'd essentially
-    // cancel out. But this is real data so we'll be looking for small
-    // amounts. If it's below tolerance assume a perfect match, otherwise
-    // go with the smallest.
-    //
-    // A better version of this would be to curve match on the data.
-    for (let i = 0; i < searchSize; i++) {
-      difference += Math.abs(
-        this.frequencyBuffer[i] - this.frequencyBuffer[i + s]
-      )
-    }
-
-    difference /= searchSize
-
-    if (difference < smallestDifference) {
-      smallestDifference = difference
-      actualFrequency = s
-    }
-
-    if (difference < tolerance) {
-      actualFrequency = s
-      break
-    }
-  }
-
-  this.lastRms = rms
-
-  return this.audioContext.sampleRate / actualFrequency
-}
 
 function Microphone (_fft) {
   var FFT_SIZE = 4096
@@ -273,7 +80,7 @@ function Microphone (_fft) {
         // console.log(freq)
 
         analyser.getFloatTimeDomainData(self.spectrum)
-        var ac = autoCorrelate(self.spectrum, context.sampleRate)
+        var ac = autocorrelate2(self.spectrum, context.sampleRate)
         console.log(ac)
         //JAG - I want to log out which frequency bin had the spike
         //   interpret(self.spectrum, SAMPLE_RATE, FFT_SIZE)
