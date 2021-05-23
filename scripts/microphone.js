@@ -1,4 +1,7 @@
 function autocorrelate2 (values, sampleRate) {
+  //http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
+  //https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
+  //https://dsp.stackexchange.com/questions/28318/getting-a-more-accurate-frequency-read-from-autocorrelation-and-peak-detection-a
   realFreq = sampleRate
   samples = values.length
   sum = 0
