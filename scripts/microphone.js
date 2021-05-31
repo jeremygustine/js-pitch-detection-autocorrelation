@@ -11,18 +11,31 @@ function autocorrelate (samples, sampleRate) {
   //https://dsp.stackexchange.com/questions/28318/getting-a-more-accurate-frequency-read-from-autocorrelation-and-peak-detection-a
 
   //explanation for this code: https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
-  realFreq = sampleRate
+  autocorrelation = []
+
+  // Autocorrelation
+  for (i = 0; i < samples.length; i++) {
+    sum = 0 //we re-calculate the sum for every sample
+
+    for (k = 0; k < samples.length - i; k++) {
+      sum += samples[k] * samples[k + i] // sum of products
+    } 
+
+    autocorrelation[i] = sum
+  }
+
+  return autocorrelation
+}
+
+function getFreq(autocorrelation, sampleRate) {
+
   sum = 0
   pd_state = 0
   period = 0
-  // Autocorrelation
-  for (i = 0; i < samples.length; i++) {
-    sum_old = sum
-    sum = 0 //we re-calculate the sum for every sample
 
-    for (k = 0; k < samples.length - i; k++){
-      sum += samples[k] * samples[k + i]
-    } 
+  for (i = 0; i < autocorrelation.length; i++) {
+    sum_old = sum
+    sum = autocorrelation[i]
 
     // Peak Detect State Machine
     if (pd_state == 2 && sum - sum_old <= 0) { //comparing the 
@@ -37,9 +50,9 @@ function autocorrelate (samples, sampleRate) {
       pd_state = 1
     }
   }
-  // Frequency identified in Hz
-  freq_per = realFreq / period
-  console.log(freq_per)
+
+  frequency = sampleRate / period
+  return frequency
 }
 
 
@@ -86,6 +99,8 @@ function Microphone (_fft) {
         self.spectrum = new Float32Array(4096)
         analyser.getFloatTimeDomainData(self.spectrum)
         var ac = autocorrelate(self.spectrum, context.sampleRate)
+        var freq = getFreq(ac, context.sampleRate)
+        console.log(freq)
         // console.log(ac)
       }
       var input = context.createMediaStreamSource(stream)
