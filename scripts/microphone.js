@@ -11,6 +11,57 @@ A similar example: https://editor.p5js.org/tora/sketches/CYMfn3t-V
 //this talks about normalization (or lack thereof) https://en.wikipedia.org/wiki/Autocorrelation
 
 //great explanation http://qingkaikong.blogspot.com/2017/01/signal-processing-how-autocorrelation.html
+
+/*
+- move through main signal one step at a time
+- at each step, 
+*/
+
+var wave = []
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noFill();
+	textSize(24);
+	textAlign(CENTER, CENTER);
+  textFont('monospace');
+
+  // source = new p5.AudioIn();
+  // source.start();
+
+  // lowPass = new p5.LowPass();
+  // lowPass.disconnect();
+  // source.connect(lowPass);
+
+  // fft = new p5.FFT();
+  // fft.setInput(lowPass);
+}
+
+function draw() {
+  background(255);
+  // noFill();
+
+  // array of values from -1 to 1
+  // var timeDomain = fft.waveform(1024, 'float32');
+  // // var corrBuff = autoCorrelate(timeDomain);
+  // var corrBuff = autocorrelate(timeDomain)
+
+  var corrBuff = wave
+
+  strokeWeight(3);
+  // stroke(66, 244, 155);
+
+  beginShape();
+  for (var i = 0; i < corrBuff.length; i++) {
+    var w = map(i, 0, corrBuff.length, 1, width);
+    var h = map(corrBuff[i], -1, 1, height, 0);
+    curveVertex(w, h);
+  }
+  endShape();
+
+  // line(0, height/2, width, height/2);
+}
+
 function autocorrelate (samples) {
   //http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
   //https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
@@ -19,6 +70,17 @@ function autocorrelate (samples) {
   //explanation for this code: https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
   autocorrelation = []
 
+  for (var lag = 0; lag < samples.length; lag++) {
+    var sum = 0
+    for (var index = 0; index < samples.length - lag; index++) {
+      var sound1 = samples[index]
+      var sound2 = samples[index + lag]
+      var product = sound1 * sound2
+      sum += product
+    }
+    autocorrelation[lag] = sum
+  }
+  /*
   // Autocorrelation
   //every sample gets compared to a lagged ve
   for (var lag = 0; lag < samples.length; lag++) {
@@ -35,16 +97,37 @@ function autocorrelate (samples) {
     //on the last pass through this loop, we look at samples[0] and compare it only to samples[0]
     //that matches the gif here, but in reverse, I believe: http://qingkaikong.blogspot.com/2017/01/signal-processing-how-autocorrelation.html
     for (var index = 0; index < samples.length - lag; index++) {
+      console.log("lag = " + lag + ", index = " + index)
+      console.log(
+        'comparing samples[' + index + '] to samples [' + (index + lag) + ']'
+      )
       var sound1 = samples[index]
       var sound2 = samples[index + lag] //if we didn't subtract the lag above, we would go out of bounds here
       var product = sound1 * sound2
       sum += product
     }
-
     autocorrelation[lag] = sum
   }
+        */
 
   return autocorrelation
+}
+
+
+function normalize(buffer) {
+  var biggestVal = 0;
+  var nSamples = buffer.length;
+  for (var index = 0; index < nSamples; index++){
+    if (abs(buffer[index]) > biggestVal){
+      biggestVal = abs(buffer[index]);
+    }
+  }
+  for (var index = 0; index < nSamples; index++){
+
+    // divide each sample of the buffer by the biggest val
+    buffer[index] /= biggestVal;
+  }
+  return buffer;
 }
 
 function getFreq (autocorrelation, sampleRate) {
@@ -96,6 +179,7 @@ function Microphone (_fft) {
 
   //document.body.addEventListener('click', init) //I had to add this line instead - JAG
 
+
   this.init = function () {
     try {
       startMic(new AudioContext())
@@ -108,6 +192,7 @@ function Microphone (_fft) {
   function startMic (context) {
     navigator.getUserMedia({ audio: true }, processSound, error)
     function processSound (stream) {
+
       // analyser extracts frequency, waveform, etc.
       var analyser = context.createAnalyser()
       analyser.smoothingTimeConstant = 0.2
@@ -117,9 +202,12 @@ function Microphone (_fft) {
       node.onaudioprocess = function () {
         self.spectrum = new Float32Array(4096)
         analyser.getFloatTimeDomainData(self.spectrum)
+
         var ac = autocorrelate(self.spectrum)
         var freq = getFreq(ac, context.sampleRate)
         console.log(freq)
+        wave = normalize(ac); //looks like it has to be normalized to visualize properly
+        // wave = ac /
         // console.log(ac)
       }
       var input = context.createMediaStreamSource(stream)
