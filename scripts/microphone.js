@@ -14,14 +14,17 @@ function autocorrelate (samples, sampleRate) {
   autocorrelation = []
 
   // Autocorrelation
-  for (i = 0; i < samples.length; i++) {
-    sum = 0 //we re-calculate the sum for every sample
+  for (var lag = 0; lag < samples.length; lag++) {
+    var sum = 0 //we re-calculate the sum for every sample
 
-    for (k = 0; k < samples.length - i; k++) {
-      sum += samples[k] * samples[k + i] // sum of products
-    } 
+    for (var index = 0; index < samples.length - lag; index++) {
+      var sound1 = samples[index]
+      var sound2 = samples[index + lag]
+      var product = sound1 * sound2
+      sum += product
+    }
 
-    autocorrelation[i] = sum
+    autocorrelation[lag] = sum
   }
 
   return autocorrelation
