@@ -1,11 +1,17 @@
 /*
 The comment here is a good explanation of how it works https://editor.p5js.org/talkscheap/sketches/ryiB52zP-
+A similar example: https://editor.p5js.org/tora/sketches/CYMfn3t-V
 */
+
+//this might explain why the shape of the autocorrelation plot diminishes over time: https://dsp.stackexchange.com/questions/64718/autocorrelation-understanding-reduced-correlation-at-periodic-time-shifts-usin
+//kinda sorta similar mathematical model: https://dsp.stackexchange.com/questions/15658/autocorrelation-function-of-a-discrete-signal
+//ignoring subtracting the mean (apparently ignored in DSP): https://stats.stackexchange.com/questions/142981/when-and-why-should-one-subtract-the-mean-before-computing-autocorrelation-funct
+//pretty sure this is what is used here: https://math.stackexchange.com/questions/452563/the-definition-of-autocorrelation
 
 //this talks about normalization (or lack thereof) https://en.wikipedia.org/wiki/Autocorrelation
 
 //great explanation http://qingkaikong.blogspot.com/2017/01/signal-processing-how-autocorrelation.html
-function autocorrelate (samples, sampleRate) {
+function autocorrelate (samples) {
   //http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
   //https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
   //https://dsp.stackexchange.com/questions/28318/getting-a-more-accurate-frequency-read-from-autocorrelation-and-peak-detection-a
@@ -14,12 +20,23 @@ function autocorrelate (samples, sampleRate) {
   autocorrelation = []
 
   // Autocorrelation
+  //every sample gets compared to a lagged ve
   for (var lag = 0; lag < samples.length; lag++) {
     var sum = 0 //we re-calculate the sum for every sample
 
+    //on the first complete pass through this inner loop, every single sample gets multiplied by itself....because lag is zero initially
+    //on the second complete pass through this inner loop, lag == 1.  So every single sample gets multipled by the next sample...sample + 1
+    //on the third complete pass through this inner loop, lag == 2.  Soe very single sample gets multipled by the next sample....sample + 2
+
+    ///so wait...why is it (samples.length - lag)?
+    //on the first complete pass, we look at samples[0] to samples[samples.length]
+    //on the second complete pass, we look at samples[0] to samples[samples.length - 1]
+    //on the third complete pass, we look at samples[0] to samples[samples.length - 2]
+    //on the last pass through this loop, we look at samples[0] and compare it only to samples[0]
+    //that matches the gif here, but in reverse, I believe: http://qingkaikong.blogspot.com/2017/01/signal-processing-how-autocorrelation.html
     for (var index = 0; index < samples.length - lag; index++) {
       var sound1 = samples[index]
-      var sound2 = samples[index + lag]
+      var sound2 = samples[index + lag] //if we didn't subtract the lag above, we would go out of bounds here
       var product = sound1 * sound2
       sum += product
     }
@@ -30,8 +47,7 @@ function autocorrelate (samples, sampleRate) {
   return autocorrelation
 }
 
-function getFreq(autocorrelation, sampleRate) {
-
+function getFreq (autocorrelation, sampleRate) {
   sum = 0
   pd_state = 0
   period = 0
@@ -41,7 +57,8 @@ function getFreq(autocorrelation, sampleRate) {
     sum = autocorrelation[i]
 
     // Peak Detect State Machine
-    if (pd_state == 2 && sum - sum_old <= 0) { //comparing the 
+    if (pd_state == 2 && sum - sum_old <= 0) {
+      //comparing the
       period = i
       pd_state = 3
     }
@@ -57,7 +74,6 @@ function getFreq(autocorrelation, sampleRate) {
   frequency = sampleRate / period
   return frequency
 }
-
 
 function Microphone (_fft) {
   var FFT_SIZE = 4096
@@ -101,7 +117,7 @@ function Microphone (_fft) {
       node.onaudioprocess = function () {
         self.spectrum = new Float32Array(4096)
         analyser.getFloatTimeDomainData(self.spectrum)
-        var ac = autocorrelate(self.spectrum, context.sampleRate)
+        var ac = autocorrelate(self.spectrum)
         var freq = getFreq(ac, context.sampleRate)
         console.log(freq)
         // console.log(ac)
