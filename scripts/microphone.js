@@ -78,6 +78,7 @@ function autocorrelate (samples) {
       var product = sound1 * sound2
       sum += product
     }
+    console.log(sum)
     autocorrelation[lag] = sum
   }
   /*
@@ -203,9 +204,10 @@ function Microphone (_fft) {
         self.spectrum = new Float32Array(4096)
         analyser.getFloatTimeDomainData(self.spectrum)
 
-        var ac = autocorrelate(self.spectrum)
-        var freq = getFreq(ac, context.sampleRate)
-        console.log(freq)
+        var arr = [1, 2, 3, 4, 5]
+        var ac = autocorrelate(arr)
+        // var freq = getFreq(ac, context.sampleRate)
+        // console.log(freq)
         wave = normalize(ac); //looks like it has to be normalized to visualize properly
         // wave = ac /
         // console.log(ac)
