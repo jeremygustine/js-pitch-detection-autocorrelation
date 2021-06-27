@@ -204,8 +204,8 @@ function Microphone (_fft) {
         self.spectrum = new Float32Array(4096)
         analyser.getFloatTimeDomainData(self.spectrum)
 
-        var arr = [1, 2, 3, 4, 5]
-        var ac = autocorrelate(arr)
+        // var arr = [1, 2, 3, 4, 5]
+        var ac = autocorrelate(self.spectrum)
         // var freq = getFreq(ac, context.sampleRate)
         // console.log(freq)
         wave = normalize(ac); //looks like it has to be normalized to visualize properly
