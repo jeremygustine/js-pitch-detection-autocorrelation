@@ -62,6 +62,29 @@ function draw() {
   // line(0, height/2, width, height/2);
 }
 
+function rxx(l, N, x) {
+  var sum = 0;
+  for (var n = 0; n <= N - l - 1; n++) {
+    sum += (x[n] * x [n + l])
+  }
+  return sum;
+}
+
+function autocorrelationWithShiftingLag(samples) {
+  var autocorrelation = []
+  for (var lag = 0; lag < samples.length; lag++) {
+    autocorrelation[lag] = rxx(lag, samples.length, samples)
+  }
+  return autocorrelation
+}
+
+function maxAbsoluteScaling(data) {
+  var xMax = Math.abs(Math.max(...data))
+  return data.map(x => x / xMax)
+}
+
+
+
 function autocorrelate (samples) {
   //http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
   //https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
@@ -71,14 +94,7 @@ function autocorrelate (samples) {
   autocorrelation = []
 
   for (var lag = 0; lag < samples.length; lag++) {
-    var sum = 0
-    for (var index = 0; index < samples.length - lag; index++) {
-      var sound1 = samples[index]
-      var sound2 = samples[index + lag]
-      var product = sound1 * sound2
-      sum += product
-    }
-    console.log(sum)
+    var sum = rxx(lag, samples.length, samples)
     autocorrelation[lag] = sum
   }
   /*
@@ -114,23 +130,38 @@ function autocorrelate (samples) {
   return autocorrelation
 }
 
-
-function normalize(buffer) {
-  var biggestVal = 0;
-  var nSamples = buffer.length;
-  for (var index = 0; index < nSamples; index++){
-    if (abs(buffer[index]) > biggestVal){
-      biggestVal = abs(buffer[index]);
-    }
+function normalize2(samples, ac) {
+  var normalized = []
+  var sum = 0
+  for (var n = 0; n < samples.length; n++) {
+    sum += (samples[n] * samples[n])
   }
-  for (var index = 0; index < nSamples; index++){
 
-    // divide each sample of the buffer by the biggest val
-    buffer[index] /= biggestVal;
+  for (var n = 0; n < samples.length; n++) {
+    normalized[n] = ac[n] / sum
   }
-  return buffer;
+  return normalized
 }
 
+// function normalize(buffer) {
+//   var biggestVal = 0;
+//   var nSamples = buffer.length;
+//   //find largest value (take absolute value)
+//   //shouldn't this always be the first value?
+//   for (var index = 0; index < nSamples; index++){
+//     if (abs(buffer[index]) > biggestVal){
+//       biggestVal = abs(buffer[index]);
+//     }
+//   }
+//   for (var index = 0; index < nSamples; index++){
+
+//     // divide each sample of the buffer by the biggest val
+//     buffer[index] /= biggestVal;
+//   }
+//   return buffer;
+// }
+
+//not normalizing between -1 and 1 is called covariance: https://math.stackexchange.com/questions/1621786/why-is-autocorrelation-used-without-normalization-in-signal-processing-field
 function getFreq (autocorrelation, sampleRate) {
   sum = 0
   pd_state = 0
@@ -205,12 +236,25 @@ function Microphone (_fft) {
         analyser.getFloatTimeDomainData(self.spectrum)
 
         // var arr = [1, 2, 3, 4, 5]
-        var ac = autocorrelate(self.spectrum)
-        // var freq = getFreq(ac, context.sampleRate)
-        // console.log(freq)
-        wave = normalize(ac); //looks like it has to be normalized to visualize properly
-        // wave = ac /
+        // var ac = autocorrelate(self.spectrum)
+        
+        // wave = normalize2(self.spectrum, ac)
+        var ac = autocorrelationWithShiftingLag(self.spectrum)
+
+        wave = maxAbsoluteScaling(ac)
+        console.log("normalized autocorrelation:")
+        console.log(wave)
+
+        // console.log("Autocorrelation:")
         // console.log(ac)
+        // wave = normalize(wave); //looks like it has to be normalized to visualize properly
+        // wave = ac /
+        // console.log("Normalization:")
+        // console.log(wave)
+
+        var freq = getFreq(wave, context.sampleRate)
+        console.log("Frequency:")
+        console.log(freq)
       }
       var input = context.createMediaStreamSource(stream)
       input.connect(analyser)
@@ -230,3 +274,10 @@ document.body.addEventListener('click', function () {
 
   Mic.init()
 })
+
+
+
+///https://towardsdatascience.com/data-normalization-with-pandas-and-scikit-learn-7c1cc6ed6475
+//maximum absolute scaling (to visual between -1 and 1) (or absolute maximum scaling)
+
+//different kinds of normalization: https://www.analyticsvidhya.com/blog/2021/05/feature-scaling-techniques-in-python-a-complete-guide/
