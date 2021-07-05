@@ -1,16 +1,48 @@
 <html>
     <head>
-        <link rel="stylesheet" href="index.css">
+
+        <style>
+            .center {
+                padding: 70px 0;
+                text-align: center;
+            }
+
+            #footer{ 
+                z-index: 1;
+                position: fixed;     
+                text-align: center;    
+                bottom: 0px; 
+                width: 100%;
+                padding-bottom: 100px;
+            }  
+
+            #title {
+                z-index: 1;
+            }
+        </style>
         
     </head>
     <body>
 
-        <!-- <script src="scripts/Grid.js"></script> -->
-        <!-- <script src="scripts/canvas.js"></script> -->
-        <!-- <script src="scripts/interpreter.js"></script> -->
-        <script src="scripts/microphone.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.11/p5.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.11/addons/p5.dom.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.11/addons/p5.sound.min.js"></script>
+        <script src="scripts/interpreter.js"></script>
+        <script src="scripts/microphone.js"></script>
+        <script src="scripts/start.js"></script>
+
+        <div id="title">
+            <div class="center">
+                <h4>Autocorrelation</h4>
+                <h4>Pitch-Detection Demo</h4>
+                <h2>Click anywhere in the screen and enable microphone permission to continue</h2>
+            </div>
+        </div>
+
+        <div id="footer" style="display: none">
+            <div id="frequency">Estimated Frequency: </div>
+            <div id="note">Estimated Note:</div>
+            <div>Virtual Guitar: <a href="https://www.musicca.com/guitar" target="_blank">https://www.musicca.com/guitar</a></div>
+        </div>
     </body>
 </html>
