@@ -5,7 +5,7 @@ is one the first available octave of the guitar
 function getFundamentalFrequency (frequency) {
     for (var i = 1; i <= 5; i++) {
         var currentHarmonic = frequency  / i
-        if (currentHarmonic < 350) {
+        if (currentHarmonic < 160) {
             return currentHarmonic
         }
     }
@@ -28,23 +28,8 @@ var n = {
     '138.6': 'C#',
     '146.8': 'D',
     '155.6': 'D#',
-    '164.8': 'E',
-    '174.6': 'F',
-    '185': 'F#',
-    '196': 'G',
-    '207.7': 'G#',
-    '220': 'A',
-    '233.1': 'A#',
-    '246.9': 'B',
-    '261.6': 'C',
-    '277.2': 'C#',
-    '293.7': 'D',
-    '311.1': 'D#',
-    '329.6': 'E',
-    '349.2': 'F',
 }
-
-var notes = [73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.8, 110, 116.5, 123.5, 130.8, 138.6, 146.8, 155.6, 164.8, 174.6, 185, 196, 207.7, 220, 233.1, 246.9, 261.6, 277.2, 293.7, 311.1, 329.6, 349.2]
+var notes = [73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.8, 110, 116.5, 123.5, 130.8, 138.6, 146.8, 155.6]
 function getClosestNoteFrequency (frequency) {
     var smallestDifference = Number.MAX_SAFE_INTEGER;
     var closestNote = Number.MAX_SAFE_INTEGER
