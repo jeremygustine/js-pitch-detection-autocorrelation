@@ -1,39 +1,5 @@
-//http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
-//https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
-//https://dsp.stackexchange.com/questions/28318/getting-a-more-accurate-frequency-read-from-autocorrelation-and-peak-detection-a
 
-//explanation for this code: https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
-
-/*
-The comment here is a good explanation of how it works https://editor.p5js.org/talkscheap/sketches/ryiB52zP-
-A similar example: https://editor.p5js.org/tora/sketches/CYMfn3t-V
-*/
-
-var wave = []
-
-function setup() {
-    createCanvas(windowWidth, windowHeight);
-    noFill();
-    textSize(24);
-	textAlign(CENTER, CENTER);
-    textFont('monospace');
-}
-
-function draw() {
-  background(255);
-  strokeWeight(3);
-
-  var corrBuff = wave
-
-  beginShape();
-  for (var i = 0; i < corrBuff.length; i++) {
-    var w = map(i, 0, corrBuff.length, 1, width);
-    var h = map(corrBuff[i], -1, 1, height, 0);
-    curveVertex(w, h);
-  }
-  endShape();
-}
-
+//autocorrelation function
 function rxx(l, N, x) {
     var sum = 0;
     for (var n = 0; n <= N - l - 1; n++) {
@@ -84,8 +50,9 @@ function getFreq (autocorrelation, sampleRate) {
 
 function interpret(timeDomainData, sampleRate) {
     var ac = autocorrelationWithShiftingLag(timeDomainData)
-    wave = maxAbsoluteScaling(ac)
-    var freq = getFreq(wave, sampleRate)
+    var normalized = maxAbsoluteScaling(ac)
+    wave = normalized //copy into global wave variable for drawing script
+    var freq = getFreq(normalized, sampleRate)
 
     var fundamental_frequency = getFundamentalFrequency(freq)
     var closest_note = getClosestNoteFrequency(fundamental_frequency)
@@ -99,3 +66,10 @@ function interpret(timeDomainData, sampleRate) {
     document.getElementById('frequency').innerHTML = "Estimated Fundamental Frequency: " + fundamental_frequency
     document.getElementById('note').innerHTML = "Estimated Frequency: " + note_letter
 }
+
+
+
+//http://www.akellyirl.com/reliable-frequency-detection-using-dsp-techniques/
+//https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
+//https://dsp.stackexchange.com/questions/28318/getting-a-more-accurate-frequency-read-from-autocorrelation-and-peak-detection-a
+//explanation for this code: https://www.instructables.com/Reliable-Frequency-Detection-Using-DSP-Techniques/
