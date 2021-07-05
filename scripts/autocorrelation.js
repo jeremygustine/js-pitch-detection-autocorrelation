@@ -80,13 +80,13 @@ function getFreq (autocorrelation, sampleRate) {
   
     frequency = sampleRate / period
     return frequency
-  }
+}
 
 function interpret(timeDomainData, sampleRate) {
     var ac = autocorrelationWithShiftingLag(timeDomainData)
     wave = maxAbsoluteScaling(ac)
     var freq = getFreq(wave, sampleRate)
-    
+
     var fundamental_frequency = getFundamentalFrequency(freq)
     var closest_note = getClosestNoteFrequency(fundamental_frequency)
     var note_letter = getNoteLetter(closest_note)
@@ -95,4 +95,7 @@ function interpret(timeDomainData, sampleRate) {
     console.log('estimated fundamental frequency' + fundamental_frequency)
     console.log('estimated closest note' + closest_note)
     console.log('estimated note: ' + note_letter)
+
+    document.getElementById('frequency').innerHTML = "Estimated Fundamental Frequency: " + fundamental_frequency
+    document.getElementById('note').innerHTML = "Estimated Frequency: " + note_letter
 }
